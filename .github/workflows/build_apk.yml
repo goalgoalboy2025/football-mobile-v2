@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -13,26 +11,55 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # 1. 安装 Java (Android 构建必需)
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    # 2. 安装 Python
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-
+    # 3. 安装 Flutter
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.19.0'
 
+    # 4. 安装依赖 (自动检测目录)
+    - name: Install Dependencies
+      run: |
+        ls -R
+        if [ -f "requirements.txt" ]; then
+          echo "Found requirements.txt in root"
+          pip install -r requirements.txt
+        elif [ -f "football-mobile/requirements.txt" ]; then
+          echo "Found requirements.txt in football-mobile/"
+          cd football-mobile
+          pip install -r requirements.txt
+          echo "PROJECT_DIR=football-mobile" >> $GITHUB_ENV
+        else
+          echo "Error: requirements.txt not found!"
+          exit 1
+        fi
+
+    # 5. 构建 APK
     - name: Flet Build APK
       run: |
+        if [ -n "$PROJECT_DIR" ]; then
+          cd $PROJECT_DIR
+        fi
         flet build apk --verbose
 
+    # 6. 上传 APK
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: football-fixtures-apk
-        path: build/apk/app-release.apk
+        path: |
+          build/apk/app-release.apk
+          football-mobile/build/apk/app-release.apk
