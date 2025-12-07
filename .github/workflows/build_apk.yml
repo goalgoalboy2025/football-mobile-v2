@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # 1. 环境准备
+    # 1. 环境准备：Android 构建必须依赖 Java (这是之前失败的关键原因)
     - name: Setup Java
       uses: actions/setup-java@v3
       with:
@@ -28,7 +28,7 @@ jobs:
       with:
         flutter-version: '3.19.0'
 
-    # 2. 智能构建 (自动寻找项目目录)
+    # 2. 智能构建 (自动寻找项目目录，防止文件夹嵌套导致找不到文件)
     - name: Smart Build
       run: |
         echo "🔍 Searching for main.py..."
@@ -59,12 +59,12 @@ jobs:
           pip install -r requirements.txt
         else
           echo "⚠️ No requirements.txt found, installing detected packages..."
-          # 根据代码分析，您的项目需要这些库
+          # 即使没有 requirements.txt 也自动补全依赖
           pip install requests beautifulsoup4 pytz
         fi
         
         echo "🚀 Starting Flet Build..."
-        # 使用 -v 开启详细日志
+        # 使用 -v 开启详细日志，方便排查
         flet build apk --verbose
 
     # 3. 上传结果 (匹配所有生成的 APK)
