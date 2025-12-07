@@ -30,5 +30,5 @@ flet build apk
 如果你没有本地 Android 开发环境，可以将此项目上传到 GitHub，然后使用 GitHub Actions 自动构建。
 
 1. 将 `football-mobile` 文件夹内容上传到新的 GitHub 仓库。
-2. 在仓库中创建 `.github/workflows/build.yml` 文件，内容参考 Flet 官方文档的 CI 配置。
+2. **确保 `.github/workflows/build_apk.yml` 文件已包含在内。**
 3. GitHub 会自动构建并生成 APK 文件供下载。
