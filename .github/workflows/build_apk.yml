@@ -1,0 +1,70 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # 1. 调试信息
+    - name: Debug File System
+      run: |
+        echo "📂 Current Directory:"
+        pwd
+        echo "📂 File List (Recursive):"
+        ls -R
+
+    # 2. 环境配置
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+
+    # 3. 智能构建
+    - name: Build with Flet
+      run: |
+        echo "🔍 Searching for main.py..."
+        MAIN_PATH=$(find . -name "main.py" -not -path "*/.*" | head -n 1)
+        
+        if [ -z "$MAIN_PATH" ]; then
+          echo "❌ Fatal: main.py not found!"
+          exit 1
+        fi
+        
+        WORK_DIR=$(dirname "$MAIN_PATH")
+        cd "$WORK_DIR"
+        
+        echo "📦 Installing dependencies..."
+        python -m pip install --upgrade pip
+        pip install flet requests beautifulsoup4 pytz
+        
+        echo "📝 Accepting Android licenses..."
+        yes | sdkmanager --licenses > /dev/null 2>&1 || true
+        
+        echo "🚀 Starting build..."
+        flet build apk --verbose
+
+    # 4. 上传结果
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: football-fixtures-apk
+        path: |
+          **/*.apk
